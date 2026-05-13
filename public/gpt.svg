@@ -1,0 +1,36 @@
+<svg width="1200" height="800" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7f5af0" />
+      <stop offset="100%" stop-color="#2cb67d" />
+    </linearGradient>
+
+    <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="12" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="100%" height="100%" fill="#0d1117"/>
+
+  <!-- Infinity Symbol Glow -->
+  <path
+    d="M 300 400
+       C 300 260, 500 260, 600 400
+       C 700 540, 900 540, 900 400
+       C 900 260, 700 260, 600 400
+       C 500 540, 300 540, 300 400"
+    fill="none"
+    stroke="url(#glow)"
+    stroke-width="40"
+    stroke-linecap="round"
+    filter="url(#softGlow)"
+  />
+
+  <!-- Subtle Center Glow -->
+  <circle cx="600" cy="400" r="10" fill="#ffffff" opacity="0.8"/>
+</svg>
