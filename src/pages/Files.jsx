@@ -61,6 +61,8 @@ async function downloadWithFilePicker(fileName, token) {
     suggestedName: fileName,
   });
   const writableStream = await fileHandle.createWritable();
+  setDownloading(true); // ✅ yahan add karo — bilkul pehle
+  setProgress(0);
 
   const response = await fetch(`${BACKEND_URL}/download?filename=${fileName}`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -91,7 +93,7 @@ async function downloadWithFilePicker(fileName, token) {
   setDownloading(false);
 
   // ✅ thoda wait karo reset se pehle — user 100% dekh sake
-  setTimeout(() => setProgress(0), 2000);
+  // setTimeout(() => setProgress(0), 2000);
 }
 
 // ❌ Firefox/Safari — RAM mein aayega (koi option nahi)
