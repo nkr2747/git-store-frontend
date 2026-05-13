@@ -66,7 +66,11 @@ async function downloadWithFilePicker(fileName, token) {
     headers: { Authorization: `Bearer ${token}` },
   });
 
-  const totalSize = parseInt(response.headers.get("Content-Length"));
+  const totalSize = 
+  parseInt(response.headers.get("X-File-Size")) ||      // ✅ pehle ye try karo
+  parseInt(response.headers.get("Content-Length"));     // fallback
+
+console.log("Total size:", totalSize); // debug ke liye
   const reader = response.body.getReader();
   let receivedSize = 0;
 
