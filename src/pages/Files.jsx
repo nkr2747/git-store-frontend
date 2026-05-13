@@ -67,10 +67,11 @@ async function downloadWithFilePicker(fileName, token) {
   });
 
   const totalSize = 
-  parseInt(response.headers.get("X-File-Size")) ||      // ✅ pehle ye try karo
-  parseInt(response.headers.get("Content-Length"));     // fallback
+    parseInt(response.headers.get("X-File-Size")) ||
+    parseInt(response.headers.get("Content-Length"));
 
-console.log("Total size:", totalSize); // debug ke liye
+  console.log("Total size:", totalSize);
+
   const reader = response.body.getReader();
   let receivedSize = 0;
 
@@ -80,12 +81,17 @@ console.log("Total size:", totalSize); // debug ke liye
 
     await writableStream.write(value);
     receivedSize += value.length;
-    setProgress(Math.round((receivedSize / totalSize) * 100));
+
+    const percent = Math.round((receivedSize / totalSize) * 100);
+    console.log("Progress:", percent); // ✅ dekho ye print ho raha hai?
+    setProgress(percent);
   }
 
   await writableStream.close();
   setDownloading(false);
-  setProgress(0);
+
+  // ✅ thoda wait karo reset se pehle — user 100% dekh sake
+  setTimeout(() => setProgress(0), 2000);
 }
 
 // ❌ Firefox/Safari — RAM mein aayega (koi option nahi)
