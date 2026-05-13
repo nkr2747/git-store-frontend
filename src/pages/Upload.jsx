@@ -6,7 +6,8 @@ function Upload() {
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [uploadDisable, setUploadDisable] = useState(true);
-
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+  
   function handleChange(e) {
 
     const selectedFile =

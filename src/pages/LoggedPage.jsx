@@ -6,10 +6,11 @@ import Upload from "./Upload";
 import { NavLink, Outlet } from "react-router-dom";
 
 export function LoggedPage() {
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
     async function handleLogout() {
   try {
     const savedToken = localStorage.getItem('token');
-    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+    
 
     await fetch(`${BACKEND_URL}/auth/logout`, {
       method: 'POST',

@@ -42,57 +42,79 @@ export function Files() {
     }
   }
 
-  async function handleDownload(fileName) {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      window.location.href = "/";
-      return;
-    }
+async function handleDownload(fileName) {
+  const token = localStorage.getItem("token");
 
-    setDownloading(true);
-    setProgress(0);
-
-    const response = await fetch(
-      `${BACKEND_URL}/download?filename=${fileName}`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      },
-    );
-
-    if (!response.ok) {
-      setDownloading(false);
-      return;
-    }
-
-    const totalSize = parseInt(response.headers.get("Content-Length"));
-    const reader = response.body.getReader();
-    const chunks = [];
-    let receivedSize = 0;
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      chunks.push(value);
-      receivedSize += value.length;
-
-      // ✅ Progress update
-      const percent = Math.round((receivedSize / totalSize) * 100);
-      setProgress(percent);
-    }
-
-    // ✅ File save karo
-    const blob = new Blob(chunks);
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = fileName;
-    a.click();
-    window.URL.revokeObjectURL(url);
-
-    setDownloading(false);
-    setProgress(0);
+  // ✅ Check karo — browser support karta hai?
+  if (window.showSaveFilePicker) {
+    // Chrome — seedha disk pe likho
+    await downloadWithFilePicker(fileName, token);
+  } else {
+    // Firefox/Safari — purana tarika
+    await downloadWithBlob(fileName, token);
   }
+}
+
+// ✅ Chrome — RAM use nahi hogi
+async function downloadWithFilePicker(fileName, token) {
+  const fileHandle = await window.showSaveFilePicker({
+    suggestedName: fileName,
+  });
+  const writableStream = await fileHandle.createWritable();
+
+  const response = await fetch(`${BACKEND_URL}/download?filename=${fileName}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  const totalSize = parseInt(response.headers.get("Content-Length"));
+  const reader = response.body.getReader();
+  let receivedSize = 0;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    await writableStream.write(value);
+    receivedSize += value.length;
+    setProgress(Math.round((receivedSize / totalSize) * 100));
+  }
+
+  await writableStream.close();
+  setDownloading(false);
+  setProgress(0);
+}
+
+// ❌ Firefox/Safari — RAM mein aayega (koi option nahi)
+async function downloadWithBlob(fileName, token) {
+  const response = await fetch(`${BACKEND_URL}/download?filename=${fileName}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  const totalSize = parseInt(response.headers.get("Content-Length"));
+  const reader = response.body.getReader();
+  const chunks = [];
+  let receivedSize = 0;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    chunks.push(value);
+    receivedSize += value.length;
+    setProgress(Math.round((receivedSize / totalSize) * 100));
+  }
+
+  const blob = new Blob(chunks);
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName;
+  a.click();
+  window.URL.revokeObjectURL(url);
+
+  setDownloading(false);
+  setProgress(0);
+}
 
   useEffect(() => {
     const token = localStorage.getItem("token");
