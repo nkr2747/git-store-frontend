@@ -2,7 +2,7 @@ import "../Second.css";
 import { useState, useEffect } from "react";
 export function Files() {
   const [inputFile, setInputFile] = useState("");
-  const [files, setFiles] = useState([]);
+  const [files, setFiles] = useState(null);
   const [downloading, setDownloading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [deleting, setDeleting] = useState(null);
@@ -42,91 +42,97 @@ export function Files() {
     }
   }
 
-async function handleDownload(fileName) {
-  const token = localStorage.getItem("token");
+  async function handleDownload(fileName) {
+    const token = localStorage.getItem("token");
 
-  // ✅ Check karo — browser support karta hai?
-  if (window.showSaveFilePicker) {
-    // Chrome — seedha disk pe likho
-    await downloadWithFilePicker(fileName, token);
-  } else {
-    // Firefox/Safari — purana tarika
-    await downloadWithBlob(fileName, token);
-  }
-}
-
-// ✅ Chrome — RAM use nahi hogi
-async function downloadWithFilePicker(fileName, token) {
-  const fileHandle = await window.showSaveFilePicker({
-    suggestedName: fileName,
-  });
-  const writableStream = await fileHandle.createWritable();
-  setDownloading(true); // ✅ yahan add karo — bilkul pehle
-  setProgress(0);
-
-  const response = await fetch(`${BACKEND_URL}/download?filename=${fileName}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-
-  const totalSize = 
-    parseInt(response.headers.get("X-File-Size")) ||
-    parseInt(response.headers.get("Content-Length"));
-
-  console.log("Total size:", totalSize);
-
-  const reader = response.body.getReader();
-  let receivedSize = 0;
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-
-    await writableStream.write(value);
-    receivedSize += value.length;
-
-    const percent = Math.round((receivedSize / totalSize) * 100);
-    console.log("Progress:", percent); // ✅ dekho ye print ho raha hai?
-    setProgress(percent);
+    // ✅ Check karo — browser support karta hai?
+    if (window.showSaveFilePicker) {
+      // Chrome — seedha disk pe likho
+      await downloadWithFilePicker(fileName, token);
+    } else {
+      // Firefox/Safari — purana tarika
+      await downloadWithBlob(fileName, token);
+    }
   }
 
-  await writableStream.close();
-  setDownloading(false);
+  // ✅ Chrome — RAM use nahi hogi
+  async function downloadWithFilePicker(fileName, token) {
+    const fileHandle = await window.showSaveFilePicker({
+      suggestedName: fileName,
+    });
+    const writableStream = await fileHandle.createWritable();
+    setDownloading(true); // ✅ yahan add karo — bilkul pehle
+    setProgress(0);
 
-  // ✅ thoda wait karo reset se pehle — user 100% dekh sake
-  // setTimeout(() => setProgress(0), 2000);
-}
+    const response = await fetch(
+      `${BACKEND_URL}/download?filename=${fileName}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
 
-// ❌ Firefox/Safari — RAM mein aayega (koi option nahi)
-async function downloadWithBlob(fileName, token) {
-  const response = await fetch(`${BACKEND_URL}/download?filename=${fileName}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+    const totalSize =
+      parseInt(response.headers.get("X-File-Size")) ||
+      parseInt(response.headers.get("Content-Length"));
 
-  const totalSize = parseInt(response.headers.get("Content-Length"));
-  const reader = response.body.getReader();
-  const chunks = [];
-  let receivedSize = 0;
+    console.log("Total size:", totalSize);
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
+    const reader = response.body.getReader();
+    let receivedSize = 0;
 
-    chunks.push(value);
-    receivedSize += value.length;
-    setProgress(Math.round((receivedSize / totalSize) * 100));
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      await writableStream.write(value);
+      receivedSize += value.length;
+
+      const percent = Math.round((receivedSize / totalSize) * 100);
+      console.log("Progress:", percent); // ✅ dekho ye print ho raha hai?
+      setProgress(percent);
+    }
+
+    await writableStream.close();
+    setDownloading(false);
+
+    // ✅ thoda wait karo reset se pehle — user 100% dekh sake
+    // setTimeout(() => setProgress(0), 2000);
   }
 
-  const blob = new Blob(chunks);
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = fileName;
-  a.click();
-  window.URL.revokeObjectURL(url);
+  // ❌ Firefox/Safari — RAM mein aayega (koi option nahi)
+  async function downloadWithBlob(fileName, token) {
+    const response = await fetch(
+      `${BACKEND_URL}/download?filename=${fileName}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
 
-  setDownloading(false);
-  setProgress(0);
-}
+    const totalSize = parseInt(response.headers.get("Content-Length"));
+    const reader = response.body.getReader();
+    const chunks = [];
+    let receivedSize = 0;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      chunks.push(value);
+      receivedSize += value.length;
+      setProgress(Math.round((receivedSize / totalSize) * 100));
+    }
+
+    const blob = new Blob(chunks);
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    window.URL.revokeObjectURL(url);
+
+    setDownloading(false);
+    setProgress(0);
+  }
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -168,32 +174,40 @@ async function downloadWithBlob(fileName, token) {
         />
       </div>
       <div className="files-list">
-        {files.map((value, index) => (
-          <div className="file-item" key={index}>
-            <span className="file-name">{value.file_name}</span>
-            <span>{(value.file_size / (1024 * 1024)).toFixed(2)} MB</span>
-            <span>
-              {new Date(value.uploaded_at).toLocaleString("en-IN", {
-                timeZone: "Asia/Kolkata",
-              })}
-            </span>
-            <div className="file-actions">
-              <button
-                className="btn-download"
-                onClick={() => handleDownload(value.file_name)}
-              >
-                ⬇ Download
-              </button>
-              <button
-                className="btn-delete"
-                onClick={() => handleDelete(value.file_name)}
-                disabled={deleting === value.file_name}
-              >
-                {deleting === value.file_name ? "Deleting..." : "🗑 Delete"}
-              </button>
+        {files === null ? (
+          <div class="d-flex justify-content-center">
+            <div class="spinner-border" role="status">
+              <span class="visually-hidden">Loading...</span>
             </div>
           </div>
-        ))}
+        ) : (
+          files.map((value, index) => (
+            <div className="file-item" key={index}>
+              <span className="file-name">{value.file_name}</span>
+              <span>{(value.file_size / (1024 * 1024)).toFixed(2)} MB</span>
+              <span>
+                {new Date(value.uploaded_at).toLocaleString("en-IN", {
+                  timeZone: "Asia/Kolkata",
+                })}
+              </span>
+              <div className="file-actions">
+                <button
+                  className="btn-download"
+                  onClick={() => handleDownload(value.file_name)}
+                >
+                  ⬇ Download
+                </button>
+                <button
+                  className="btn-delete"
+                  onClick={() => handleDelete(value.file_name)}
+                  disabled={deleting === value.file_name}
+                >
+                  {deleting === value.file_name ? "Deleting..." : "🗑 Delete"}
+                </button>
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       {/* ✅ Progress bar */}

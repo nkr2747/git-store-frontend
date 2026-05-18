@@ -8,6 +8,7 @@ function Upload() {
   const [uploadDisable, setUploadDisable] = useState(true);
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
   
+  
   function handleChange(e) {
 
     const selectedFile =
@@ -20,51 +21,62 @@ function Upload() {
  async function handleUpload() {
   setUploading(true);
   const token = localStorage.getItem("token");
-  console.log(token);
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
   const CHUNK_SIZE = 10 * 1024 * 1024; // 10MB
+  const BATCH_SIZE = 5;
   const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
-  // const repoRes = await fetch('http://localhost:3000/repo', {
-  //   headers: { Authorization: `Bearer ${token}` }
-  // });
-  //const repoData = await repoRes.json();
-  //console.log("Repo data:", repoData);
-  // Step 1 - Sab chunks parallel upload karo, blobShas collect karo
-  const uploadPromises = [];
-  for (let i = 0; i < totalChunks; i++) {
-    const start = i * CHUNK_SIZE;
-    const end = Math.min(start + CHUNK_SIZE, file.size);
-    const chunk = file.slice(start, end);
-    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-    uploadPromises.push(
-      fetch(`${BACKEND_URL}/upload?filename=${file.name}&index=${i}`, {
+
+  try {
+    for (let i = 0; i < totalChunks; i += BATCH_SIZE) {
+      const batchEnd = Math.min(i + BATCH_SIZE, totalChunks);
+
+      // Step 1 - is batch ke chunks parallel upload karo
+      const uploadPromises = [];
+      for (let j = i; j < batchEnd; j++) {
+        const start = j * CHUNK_SIZE;
+        const end = Math.min(start + CHUNK_SIZE, file.size);
+        const chunk = file.slice(start, end);
+
+        uploadPromises.push(
+          fetch(`${BACKEND_URL}/upload?filename=${file.name}&index=${j}`, {
+            method: 'POST',
+            body: chunk,
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/octet-stream'
+            }
+          }).then(r => r.json())
+        );
+      }
+
+      const results = await Promise.all(uploadPromises);
+      console.log(`Batch ${Math.floor(i / BATCH_SIZE) + 1} blobs ready`);
+
+      // Step 2 - is batch ka commit karo
+      const isLastBatch = batchEnd === totalChunks;
+      await fetch(`${BACKEND_URL}/commit`, {
         method: 'POST',
-        body: chunk,
         headers: {
           Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/octet-stream'
-        }
-      }).then(r => r.json())
-    );
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          filename: file.name,
+          blobShas: results.map(r => ({ index: r.index, sha: r.blobSha })),
+          fileSize: file.size,
+          isLastBatch
+        })
+      });
+
+      console.log(`Batch ${Math.floor(i / BATCH_SIZE) + 1} committed!`);
+    }
+
+    console.log("File uploaded successfully!");
+  } catch (err) {
+    console.error("Upload failed:", err);
+  } finally {
+    setUploading(false); // ✅ error pe bhi reset hoga
   }
-
-  const results = await Promise.all(uploadPromises);
-  //console.log("All blobs created!", results);
-
-  // Step 2 - Commit karo
-  await fetch(`${BACKEND_URL}/commit`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      filename: file.name,
-      blobShas: results.map(r => ({ index: r.index, sha: r.blobSha })),
-      fileSize: file.size
-    })
-  });
-  setUploading(false);
-  console.log("File committed successfully!");
 }
 
   return (
