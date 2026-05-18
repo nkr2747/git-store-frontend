@@ -19,7 +19,7 @@ function Upload() {
     setProgress(0);
     const token = localStorage.getItem("token");
     const CHUNK_SIZE = 10 * 1024 * 1024; // 10MB
-    const BATCH_SIZE = 20;
+    const BATCH_SIZE = 5;
     const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
     let uploadedChunks = 0; // ✅ kitne chunks upload hue
 
