@@ -58,7 +58,6 @@
 
 #center {
   display: flex;
-  border: 2px solid;
   flex-direction: column;
   gap: 25px;
   place-content: center;
