@@ -176,6 +176,7 @@ export default function Dashboard({
         const results = await Promise.all(uploadPromises);
         // Step 2 - commit
         const repo = results[0].repo;
+        console.log(repo);
         const isLastBatch = batchEnd === totalChunks;
         const isFirstBatch = i === 0;
         await fetch(`${BACKEND_URL}/commit`, {
