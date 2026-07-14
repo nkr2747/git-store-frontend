@@ -168,6 +168,7 @@ export default function Dashboard({
         const results = await Promise.all(uploadPromises);
         // Step 2 - commit
         const isLastBatch = batchEnd === totalChunks;
+        const isFirstBatch = i === 0;
         await fetch(`${BACKEND_URL}/commit`, {
           method: "POST",
           headers: {
@@ -178,6 +179,7 @@ export default function Dashboard({
             filename: file.name,
             blobShas: results.map((r) => ({ index: r.index, sha: r.blobSha })),
             fileSize: file.size,
+            isFirstBatch,
             isLastBatch,
           }),
         });
