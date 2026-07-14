@@ -189,6 +189,7 @@ export default function Dashboard({
 
       setProgress(100);
       setUploadProgress(100);
+      triggerNotification(`${file.name} uploaded successfully!`)
       console.log("File uploaded successfully!");
     } catch (err) {
       console.error("Upload failed:", err);
@@ -283,6 +284,7 @@ export default function Dashboard({
     });
     const writableStream = await fileHandle.createWritable();
     setDownloading(true); // ✅ yahan add karo — bilkul pehle
+    setUploading(true)
     setProgress(0);
 
     const response = await fetch(
@@ -311,11 +313,15 @@ export default function Dashboard({
       const percent = Math.round((receivedSize / totalSize) * 100);
       console.log("Progress:", percent); // ✅ dekho ye print ho raha hai?
       setProgress(percent);
+      setUploadProgress(percent);
     }
 
     await writableStream.close();
+    setProgress(100);
+    setUploadProgress(100);
+    triggerNotification(`${fileName} downloaded successfully!`)
     setDownloading(false);
-
+    setUploading(false)
     // ✅ thoda wait karo reset se pehle — user 100% dekh sake
     // setTimeout(() => setProgress(0), 2000);
   }
