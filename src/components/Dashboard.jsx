@@ -130,7 +130,7 @@ export default function Dashboard({
     setUploadProgress(0);
     const token = localStorage.getItem("token");
     const CHUNK_SIZE = 10 * 1024 * 1024; // 10MB
-    const BATCH_SIZE = 5;
+    const BATCH_SIZE = 2;
     const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
     let uploadedChunks = 0; // ✅ kitne chunks upload hue
 
