@@ -175,6 +175,7 @@ export default function Dashboard({
 
         const results = await Promise.all(uploadPromises);
         // Step 2 - commit
+        const repo = results[0].repo;
         const isLastBatch = batchEnd === totalChunks;
         const isFirstBatch = i === 0;
         await fetch(`${BACKEND_URL}/commit`, {
@@ -189,6 +190,7 @@ export default function Dashboard({
             fileSize: file.size,
             isFirstBatch,
             isLastBatch,
+            repo,
           }),
         });
 
