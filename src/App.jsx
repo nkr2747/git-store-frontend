@@ -18,7 +18,8 @@ export default function App() {
   const totalStorageUsed = 56;
   // yahan ek useEffect hook lgaenge
   const [token, setToken] = useState(null);
-
+ 
+  
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const tokenFromURL = params.get("token");

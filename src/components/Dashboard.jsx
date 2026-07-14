@@ -40,13 +40,15 @@ export default function Dashboard({
   const [downloading, setDownloading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [changeFiles, setChangeFile] = useState(0);
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+   const FRONTEND_URL = import.meta.env.VITE_FRONTEND_URL;
   // Deletion confirmation dialog state
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
-      window.location.href = "/";
+      window.location.href = FRONTEND_URL;
       return;
     }
 
@@ -55,18 +57,24 @@ export default function Dashboard({
         const response = await fetch(`${BACKEND_URL}/files`, {
           headers: { Authorization: `Bearer ${token}` },
         });
+        if (response.status === 401) {
+          localStorage.removeItem("token");
+          triggerNotification("Sesssion expired!", 'warning')
+          window.location.href = FRONTEND_URL; // hard redirect, always works even if app state is broken
+          return;
+        }
         const data = await response.json();
         setFiles(data); // ✅
         //console.log("Fetched data:", data);
         //console.log("Fetched files:", files);
       } catch (error) {
         console.error("Error fetching files:", error);
-        window.location.href = "/";
+        window.location.href = FRONTEND_URL;
       }
     }
 
     getFiles();
-  }, []);
+  }, [changeFiles]);
   const [fileToDelete, setFileToDelete] = useState(null);
   const handleDrag = (e) => {
     e.preventDefault();
@@ -189,7 +197,8 @@ export default function Dashboard({
 
       setProgress(100);
       setUploadProgress(100);
-      triggerNotification(`${file.name} uploaded successfully!`)
+      triggerNotification(`${file.name} uploaded successfully!`);
+      setChangeFile(1 - changeFiles);
       console.log("File uploaded successfully!");
     } catch (err) {
       console.error("Upload failed:", err);
@@ -254,11 +263,13 @@ export default function Dashboard({
     fileInputRef.current?.click();
   };
   //const filteredFiles = [];
-  const filteredFiles = files.filter(file => {
-    const matchesSearch = file.file_name.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredFiles = files.filter((file) => {
+    const matchesSearch = file.file_name
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
 
-    if (activeCategory === 'all') return matchesSearch;
-    if (activeCategory === 'favorites') return file.isFavorite && matchesSearch;
+    if (activeCategory === "all") return matchesSearch;
+    if (activeCategory === "favorites") return file.isFavorite && matchesSearch;
     return file.category === activeCategory && matchesSearch;
   });
   //console.log(files);
@@ -284,7 +295,7 @@ export default function Dashboard({
     });
     const writableStream = await fileHandle.createWritable();
     setDownloading(true); // ✅ yahan add karo — bilkul pehle
-    setUploading(true)
+    setUploading(true);
     setProgress(0);
 
     const response = await fetch(
@@ -319,9 +330,9 @@ export default function Dashboard({
     await writableStream.close();
     setProgress(100);
     setUploadProgress(100);
-    triggerNotification(`${fileName} downloaded successfully!`)
+    triggerNotification(`${fileName} downloaded successfully!`);
     setDownloading(false);
-    setUploading(false)
+    setUploading(false);
     // ✅ thoda wait karo reset se pehle — user 100% dekh sake
     // setTimeout(() => setProgress(0), 2000);
   }
