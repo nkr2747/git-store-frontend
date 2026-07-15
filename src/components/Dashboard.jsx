@@ -178,7 +178,10 @@ export default function Dashboard({
         const repo = results[0].repo;
         console.log(results);
         const isLastBatch = batchEnd === totalChunks;
-        const isFirstBatch = i === 0;
+        let isFirstBatch = false;
+        if(i === 0 ){
+          isFirstBatch = true;
+        }
         await fetch(`${BACKEND_URL}/commit`, {
           method: "POST",
           headers: {
@@ -486,7 +489,7 @@ export default function Dashboard({
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-black uppercase tracking-wider text-slate-900 truncate">
-                  {uploadProgress.name}
+                  {uploadProgress}
                 </p>
                 <div className="w-full bg-slate-100 border-2 border-slate-900 h-4 rounded-none p-0.5 overflow-hidden mt-1.5">
                   <motion.div
