@@ -221,7 +221,7 @@ export default function Dashboard({
     setDeleting(fileName);
     try {
       const response = await fetch(
-        `${BACKEND_URL}/delete?filename=${fileName}`,
+        `${BACKEND_URL}/delete?filename=${encodeURIComponent(fileName)}`,
         {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
@@ -305,7 +305,7 @@ export default function Dashboard({
     setProgress(0);
 
     const response = await fetch(
-      `${BACKEND_URL}/download?filename=${fileName}`,
+      `${BACKEND_URL}/download?filename=${encodeURIComponent(fileName)}`,
       {
         headers: { Authorization: `Bearer ${token}` },
       },
