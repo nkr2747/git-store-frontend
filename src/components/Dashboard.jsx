@@ -312,8 +312,7 @@ export default function Dashboard({
     );
 
     const totalSize =
-      parseInt(response.headers.get("X-File-Size")) ||
-      parseInt(response.headers.get("Content-Length"));
+      parseInt(response.headers.get("X-File-Size"));
 
     console.log("Total size:", totalSize);
 
