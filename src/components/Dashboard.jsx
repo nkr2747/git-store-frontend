@@ -345,7 +345,7 @@ export default function Dashboard({
   // ❌ Firefox/Safari — RAM mein aayega (koi option nahi)
   async function downloadWithBlob(fileName, token) {
     const response = await fetch(
-      `${BACKEND_URL}/download?filename=${fileName}`,
+      `${BACKEND_URL}/download?filename=${encodeURIComponent(fileName)}`,
       {
         headers: { Authorization: `Bearer ${token}` },
       },
